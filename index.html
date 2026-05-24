@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pit Stop</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Barlow:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --red: #e74c3c;
+            --orange: #e67e22;
+            --dark: #1a1a2e;
+            --darker: #0f0f1a;
+            --card: rgba(255,255,255,0.05);
+            --border: rgba(255,255,255,0.1);
+            --text: #f0f0f0;
+            --muted: rgba(255,255,255,0.5);
+        }
+
+        body {
+            font-family: 'Barlow', sans-serif;
+            background: var(--darker);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(ellipse at 30% 40%, rgba(231,76,60,0.15) 0%, transparent 50%),
+                        radial-gradient(ellipse at 70% 60%, rgba(230,126,34,0.1) 0%, transparent 50%);
+            animation: bgPulse 8s ease-in-out infinite alternate;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes bgPulse {
+            from { transform: scale(1) rotate(0deg); }
+            to { transform: scale(1.1) rotate(5deg); }
+        }
+
+        .app-container {
+            position: relative;
+            z-index: 1;
+            background: var(--card);
+            border-radius: 24px;
+            padding: 36px 28px;
+            text-align: center;
+            max-width: 400px;
+            width: 92%;
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+        }
+
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        .logo {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 3em;
+            font-weight: 700;
+            color: var(--red);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            text-shadow: 0 0 30px rgba(231,76,60,0.4);
+            margin-bottom: 4px;
+        }
+
+        .logo span { color: var(--orange); }
+
+        .tagline {
+            font-size: 0.85em;
+            color: var(--muted);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 36px;
+        }
+
+        .break-options {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .break-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            text-align: left;
+            color: var(--text);
+            font-family: 'Barlow', sans-serif;
+        }
+
+        .break-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--red);
+            transform: translateX(4px);
+        }
+
+        .break-btn:active { transform: scale(0.98); }
+
+        .btn-icon {
+            font-size: 2em;
+            flex-shrink: 0;
+        }
+
+        .btn-info { flex: 1; }
+
+        .btn-name {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.2em;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .btn-desc {
+            font-size: 0.8em;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .btn-time {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--orange);
+        }
+
+        .pitstop-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1.6em;
+            font-weight: 700;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+
+        .timer-display {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 5em;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: 2px;
+            line-height: 1;
+            margin-bottom: 4px;
+            transition: color 0.3s;
+        }
+
+        .timer-display.warning {
+            color: var(--orange);
+            animation: timerPulse 1s ease-in-out infinite;
+        }
+
+        .timer-display.critical {
+            color: var(--red);
+            animation: timerPulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes timerPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .fuel-area {
+            margin: 24px auto;
+            height: 200px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            position: relative;
+        }
+
+        .fuel-visual {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .fuel-stick {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 48px;
+            height: 160px;
+        }
+
+        .fuel-stick.vape {
+            width: 34px;
+            height: 145px;
+        }
+
+        .fuel-stick.cigar {
+            width: 68px;
+            height: 165px;
+        }
+
+        .cigarette-filter {
+            width: 100%;
+            height: 22px;
+            background: linear-gradient(to bottom, #c9a66b, #a07840);
+            border-radius: 0 0 3px 3px;
+            flex-shrink: 0;
+        }
+
+        .cigarette-paper {
+            width: 100%;
+            height: 120px;
+            background: linear-gradient(to right, #f0ede8, #e8e4df, #f0ede8);
+            flex: 1;
+            min-height: 10px;
+        }
+
+        .cigarette-tip {
+            width: 100%;
+            height: 10px;
+            background: linear-gradient(to top, #c0392b, #922b21);
+            border-radius: 2px 2px 0 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cigarette-tip::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30%;
+            height: 100%;
+            background: rgba(255,200,100,0.8);
+            border-radius: 50%;
+            animation: emberGlow 1.5s ease-in-out infinite alternate;
+        }
+
+        .fuel-stick.vape .cigarette-tip {
+            height: 16px;
+            background: linear-gradient(to bottom, #d7dde4, #8f9aaa);
+            border-radius: 8px 8px 3px 3px;
+            box-shadow: inset 0 0 8px rgba(255,255,255,0.35);
+        }
+
+        .fuel-stick.vape .cigarette-tip::after {
+            width: 8px;
+            height: 8px;
+            top: 4px;
+            background: rgba(65, 220, 255, 0.9);
+            box-shadow: 0 0 10px rgba(65, 220, 255, 0.9);
+        }
+
+        .fuel-stick.vape .cigarette-paper {
+            background: linear-gradient(to right, #202833, #34495e, #202833);
+            border-left: 2px solid rgba(255,255,255,0.15);
+            border-right: 2px solid rgba(0,0,0,0.25);
+            border-radius: 4px;
+        }
+
+        .fuel-stick.vape .cigarette-filter {
+            height: 18px;
+            background: linear-gradient(to bottom, #121820, #07090d);
+            border-radius: 0 0 8px 8px;
+        }
+
+        .fuel-stick.cigar .cigarette-tip {
+            height: 14px;
+            background: linear-gradient(to top, #7b241c, #c0392b);
+            border-radius: 10px 10px 2px 2px;
+        }
+
+        .fuel-stick.cigar .cigarette-tip::after {
+            width: 42%;
+            background: rgba(255, 170, 60, 0.95);
+        }
+
+        .fuel-stick.cigar .cigarette-paper {
+            background: linear-gradient(to right, #5a2d16, #8b4513, #5a2d16);
+            border-radius: 6px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.35);
+        }
+
+        .fuel-stick.cigar .cigarette-filter {
+            height: 26px;
+            background: linear-gradient(to bottom, #3b1f0e, #241106);
+            border-radius: 0 0 10px 10px;
+        }
+
+        @keyframes emberGlow {
+            from { opacity: 0.6; transform: translateX(-50%) scale(0.8); }
+            to { opacity: 1; transform: translateX(-50%) scale(1.2); }
+        }
+
+        .smoke-container {
+            position: absolute;
+            top: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+            height: 60px;
+            pointer-events: none;
+        }
+
+        .smoke-puff {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 10px;
+            background: rgba(200,200,200,0.4);
+            border-radius: 50%;
+            animation: smokeRise 2.5s ease-out infinite;
+        }
+
+        .smoke-puff:nth-child(2) { animation-delay: 0.8s; }
+        .smoke-puff:nth-child(3) { animation-delay: 1.6s; }
+
+        @keyframes smokeRise {
+            0% { transform: translateX(-50%) scale(0.5); opacity: 0.5; bottom: 0; }
+            100% { transform: translateX(calc(-50% + 15px)) scale(2.5); opacity: 0; bottom: 60px; }
+        }
+
+        .fuel-visual.accelerating .cigarette-tip::after {
+            background: rgba(255, 220, 50, 1);
+            animation: emberFast 0.3s ease-in-out infinite alternate;
+        }
+
+        .fuel-visual.accelerating .fuel-stick.vape .cigarette-tip::after {
+            background: rgba(65, 220, 255, 1);
+            box-shadow: 0 0 16px rgba(65, 220, 255, 1);
+        }
+
+        @keyframes emberFast {
+            from { opacity: 0.8; transform: translateX(-50%) scale(1); }
+            to { opacity: 1; transform: translateX(-50%) scale(1.5); }
+        }
+
+        .hold-instruction {
+            font-size: 0.82em;
+            color: var(--muted);
+            margin-top: 8px;
+            letter-spacing: 1px;
+        }
+
+        .progress-track {
+            background: rgba(255,255,255,0.08);
+            border-radius: 100px;
+            height: 6px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 100px;
+            background: linear-gradient(to right, var(--red), var(--orange));
+            transition: width 1s linear;
+        }
+
+        .boss-btn {
+            background: linear-gradient(135deg, var(--red), #c0392b);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1em;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 14px 20px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 10px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(231,76,60,0.3);
+        }
+
+        .boss-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231,76,60,0.5);
+        }
+
+        .boss-btn:active { transform: scale(0.97); }
+
+        .done-icon {
+            font-size: 4em;
+            margin-bottom: 12px;
+        }
+
+        .done-title {
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 2.2em;
+            font-weight: 700;
+            letter-spacing: 3px;
+            color: var(--orange);
+            margin-bottom: 8px;
+        }
+
+        .done-msg {
+            color: var(--muted);
+            margin-bottom: 30px;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .home-btn {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 1em;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            padding: 14px 20px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .home-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: var(--red);
+        }
+
+        .flag-bar {
+            height: 4px;
+            background: repeating-linear-gradient(
+                90deg,
+                #fff 0px, #fff 8px,
+                #000 8px, #000 16px
+            );
+            border-radius: 2px;
+            margin-bottom: 24px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+
+    <div class="screen active" id="screen-home">
+        <div class="logo">PIT <span>STOP</span></div>
+        <div class="tagline">You've earned a break</div>
+        <div class="flag-bar"></div>
+
+        <div class="break-options">
+            <button class="break-btn" onclick="startBreak('quick', 5, '🚬', 'Quick Pit', '5-minute breather')">
+                <div class="btn-icon">🚬</div>
+                <div class="btn-info">
+                    <div class="btn-name">Quick Pit</div>
+                    <div class="btn-desc">Short, sharp break</div>
+                </div>
+                <div class="btn-time">5 MIN</div>
+            </button>
+
+            <button class="break-btn" onclick="startBreak('flute', 8, '💨', 'Flute Break', 'Quick recharge session')">
+                <div class="btn-icon">💨</div>
+                <div class="btn-info">
+                    <div class="btn-name">Flute</div>
+                    <div class="btn-desc">Quick recharge session</div>
+                </div>
+                <div class="btn-time">8 MIN</div>
+            </button>
+
+            <button class="break-btn" onclick="startBreak('fulllap', 15, '🥃', 'Full Lap', 'Long slow burn')">
+                <div class="btn-icon">🥃</div>
+                <div class="btn-info">
+                    <div class="btn-name">Full Lap</div>
+                    <div class="btn-desc">Long slow burn</div>
+                </div>
+                <div class="btn-time">15 MIN</div>
+            </button>
+        </div>
+    </div>
+
+    <div class="screen" id="screen-pitstop">
+        <div class="pitstop-title" id="pitstop-label">Quick Pit</div>
+        <div class="timer-display" id="timer">5:00</div>
+
+        <div class="fuel-area">
+            <div class="fuel-visual" id="fuel-visual"
+                 onmousedown="startAccelerate()" onmouseup="stopAccelerate()" onmouseleave="stopAccelerate()"
+                 ontouchstart="startAccelerate(event)" ontouchend="stopAccelerate()">
+
+                <div class="smoke-container">
+                    <div class="smoke-puff"></div>
+                    <div class="smoke-puff"></div>
+                    <div class="smoke-puff"></div>
+                </div>
+
+                <div class="fuel-stick" id="fuel-stick">
+                    <div class="cigarette-tip" id="cig-tip"></div>
+                    <div class="cigarette-paper" id="cig-paper"></div>
+                    <div class="cigarette-filter" id="cig-filter"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="hold-instruction" id="hold-instruction">Hold to burn faster 🔥</div>
+
+        <div class="progress-track">
+            <div class="progress-fill" id="progress-fill" style="width:100%"></div>
+        </div>
+
+        <button class="boss-btn" onclick="bossAlert()">🚨 THE BOSS IS LOOKING FOR ME!</button>
+    </div>
+
+    <div class="screen" id="screen-done">
+        <div class="done-icon">🏁</div>
+        <div class="done-title">LAP COMPLETE</div>
+        <div class="done-msg">Break's over. Time to get back in the race.</div>
+        <button class="home-btn" onclick="goHome()">⬅ Back to Pits</button>
+    </div>
+
+</div>
+
+<script>
+    let totalSeconds = 0;
+    let remainingSeconds = 0;
+    let timerInterval = null;
+    let accelerating = false;
+    let accelInterval = null;
+    let currentType = 'quick';
+
+    function showScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-' + id).classList.add('active');
+    }
+
+    function startBreak(type, minutes, icon, label, desc) {
+        currentType = type;
+        totalSeconds = minutes * 60;
+        remainingSeconds = totalSeconds;
+
+        document.getElementById('pitstop-label').textContent = label;
+        setFuelStyle(type);
+        updateTimerDisplay();
+        updateCigarette();
+        updateProgress();
+
+        clearInterval(timerInterval);
+        clearInterval(accelInterval);
+        timerInterval = setInterval(tick, 1000);
+
+        showScreen('pitstop');
+    }
+
+    function setFuelStyle(type) {
+        const fuelStick = document.getElementById('fuel-stick');
+        const instruction = document.getElementById('hold-instruction');
+
+        fuelStick.classList.remove('vape', 'cigar');
+
+        if (type === 'flute') {
+            fuelStick.classList.add('vape');
+            instruction.textContent = 'Hold to vape faster 💨';
+        } else if (type === 'fulllap') {
+            fuelStick.classList.add('cigar');
+            instruction.textContent = 'Hold for a faster burn 🔥';
+        } else {
+            instruction.textContent = 'Hold to burn faster 🔥';
+        }
+    }
+
+    function tick() {
+        if (remainingSeconds <= 0) {
+            clearInterval(timerInterval);
+            showScreen('done');
+            return;
+        }
+        remainingSeconds--;
+        updateTimerDisplay();
+        updateCigarette();
+        updateProgress();
+    }
+
+    function updateTimerDisplay() {
+        const m = Math.floor(remainingSeconds / 60);
+        const s = remainingSeconds % 60;
+        const display = document.getElementById('timer');
+        display.textContent = m + ':' + String(s).padStart(2, '0');
+
+        const pct = remainingSeconds / totalSeconds;
+        display.classList.remove('warning', 'critical');
+        if (pct <= 0.1) display.classList.add('critical');
+        else if (pct <= 0.25) display.classList.add('warning');
+    }
+
+    function updateCigarette() {
+        const pct = remainingSeconds / totalSeconds;
+        const maxPaperHeight = currentType === 'flute' ? 105 : 120;
+        const paperHeight = Math.max(0, Math.round(pct * maxPaperHeight));
+        document.getElementById('cig-paper').style.height = paperHeight + 'px';
+
+        const filterEl = document.getElementById('cig-filter');
+        filterEl.style.display = pct < 0.15 ? 'none' : 'block';
+    }
+
+    function updateProgress() {
+        const pct = (remainingSeconds / totalSeconds) * 100;
+        document.getElementById('progress-fill').style.width = pct + '%';
+    }
+
+    function startAccelerate(e) {
+        if (e) e.preventDefault();
+        accelerating = true;
+        document.getElementById('fuel-visual').classList.add('accelerating');
+
+        clearInterval(accelInterval);
+        accelInterval = setInterval(() => {
+            if (remainingSeconds <= 0) {
+                stopAccelerate();
+                clearInterval(timerInterval);
+                showScreen('done');
+                return;
+            }
+            remainingSeconds = Math.max(0, remainingSeconds - 2);
+            updateTimerDisplay();
+            updateCigarette();
+            updateProgress();
+        }, 200);
+    }
+
+    function stopAccelerate() {
+        accelerating = false;
+        document.getElementById('fuel-visual').classList.remove('accelerating');
+        clearInterval(accelInterval);
+    }
+
+    function bossAlert() {
+        clearInterval(timerInterval);
+        clearInterval(accelInterval);
+        remainingSeconds = 0;
+        goHome();
+    }
+
+    function goHome() {
+        clearInterval(timerInterval);
+        clearInterval(accelInterval);
+        showScreen('home');
+    }
+</script>
+
+</body>
+</html>
